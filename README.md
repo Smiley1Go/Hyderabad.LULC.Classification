@@ -21,10 +21,15 @@ This project classifies land cover into five classes — Water, Built-up, Vegeta
 - An interactive Earth Engine App displaying the true-colour composite, classified map, legend, methods summary, accuracy results, and area statistics
 - A standalone webpage embedding the same App with supporting documentation
 
+## Links
+
+- **Earth Engine App:** [LULC](https://degrasskob.projects.earthengine.app/view/lulc)
+- **Repository:** [Smiley1Go/Works_GEE at Exercise_1](https://github.com/Smiley1Go/Works_GEE/tree/Exercise_1)
+
 ## Live Demo
 
-The classification can be viewed as a public Earth Engine App (linked within the webpage).
+The classification can be viewed as a public Earth Engine App (linked above and within the webpage).
 
 ## Data Attribution
 
-Imagery: Copernicus Sentinel-2 data, European Space Agency (ESA), accessed via Google Earth Engine.
+Imagery: Copernicus Sentinel-2 data, European Space Agency (ESA), accessed via Google Earth Engine.ean Space Agency (ESA), accessed via Google Earth Engine.
