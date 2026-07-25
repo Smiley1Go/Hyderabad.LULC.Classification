@@ -21,10 +21,6 @@ This project classifies land cover into five classes — Water, Built-up, Vegeta
 - An interactive Earth Engine App displaying the true-colour composite, classified map, legend, methods summary, accuracy results, and area statistics
 - A standalone webpage embedding the same App with supporting documentation
 
-## Repository Contents
-
-- `index.html` — Project webpage embedding the published Earth Engine App
-
 ## Live Demo
 
 The classification can be viewed as a public Earth Engine App (linked within the webpage).
