@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supervised LULC Classification of Hyderabad — Joshby Joshy</title>
+<style>
+  :root{
+    --ink:#1c231f;
+    --paper:#f6f4ee;
+    --line:#d9d3c4;
+    --water:#0066CC;
+    --builtup:#D73027;
+    --veg:#1A9850;
+    --crop:#A6D96A;
+    --bare:#D9A45B;
+    --mono: 'IBM Plex Mono', 'Courier New', monospace;
+    --sans: 'IBM Plex Sans', 'Segoe UI', Arial, sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.55;
+  }
+
+  /* ---- coordinate grid backdrop on hero ---- */
+  .hero{
+    position:relative;
+    padding:88px 24px 64px;
+    border-bottom:1px solid var(--line);
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: -1px -1px;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(circle at 22% 30%, rgba(215,48,39,0.10), transparent 45%),
+                radial-gradient(circle at 78% 65%, rgba(26,152,80,0.12), transparent 45%);
+    pointer-events:none;
+  }
+  .hero-inner{
+    position:relative;
+    max-width:920px;
+    margin:0 auto;
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:#6b6252;
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow .coords{color:var(--builtup);}
+  h1{
+    font-size:clamp(30px, 4.4vw, 50px);
+    line-height:1.08;
+    margin:18px 0 10px;
+    letter-spacing:-0.01em;
+    font-weight:700;
+  }
+  .subtitle{
+    font-size:17px;
+    color:#4a4438;
+    max-width:640px;
+    margin:0 0 30px;
+  }
+  .meta-row{
+    display:flex; flex-wrap:wrap; gap:10px 28px;
+    font-family:var(--mono); font-size:13px; color:#5a5346;
+    border-top:1px solid var(--line);
+    padding-top:18px;
+  }
+  .meta-row strong{color:var(--ink); font-weight:600;}
+
+  /* ---- section shell ---- */
+  section{max-width:920px; margin:0 auto; padding:56px 24px;}
+  section + section{border-top:1px solid var(--line);}
+  h2{
+    font-family:var(--mono);
+    font-size:13px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--builtup);
+    margin:0 0 20px;
+    display:flex; align-items:center; gap:10px;
+  }
+  h2::after{content:""; flex:1; height:1px; background:var(--line);}
+
+  /* ---- app embed ---- */
+  .app-frame-wrap{
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+    background:#fff;
+    box-shadow: 0 1px 0 var(--line);
+  }
+  .app-frame-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px;
+    background:#efece1;
+    border-bottom:1px solid var(--line);
+    font-family:var(--mono); font-size:12px; color:#5a5346;
+  }
+  .dots{display:flex; gap:6px;}
+  .dots span{width:9px; height:9px; border-radius:50%; background:#cfc8b6; display:inline-block;}
+  .app-frame-bar a{
+    color:var(--builtup); text-decoration:none; font-weight:600;
+  }
+  .app-frame-bar a:hover{text-decoration:underline;}
+  iframe{
+    width:100%; height:640px; border:0; display:block;
+    background:#e9e7dd;
+  }
+  .fallback-link{
+    display:inline-flex; align-items:center; gap:8px;
+    margin-top:16px;
+    font-family:var(--mono); font-size:13px;
+    color:var(--ink);
+    text-decoration:none;
+    border-bottom:1px solid var(--ink);
+    padding-bottom:2px;
+  }
+  .fallback-link:hover{color:var(--builtup); border-color:var(--builtup);}
+
+  /* ---- legend chips ---- */
+  .legend{display:flex; flex-wrap:wrap; gap:10px; margin:20px 0 0;}
+  .chip{
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:12.5px;
+    border:1px solid var(--line); border-radius:999px;
+    padding:6px 12px; background:#fff;
+  }
+  .swatch{width:10px; height:10px; border-radius:2px; display:inline-block;}
+
+  /* ---- methods grid ---- */
+  .kv-grid{
+    display:grid; grid-template-columns:180px 1fr;
+    row-gap:14px; column-gap:20px;
+    font-size:14.5px;
+  }
+  .kv-grid dt{font-family:var(--mono); color:#6b6252; font-size:12.5px; text-transform:uppercase; letter-spacing:.06em;}
+  .kv-grid dd{margin:0;}
+
+  /* ---- accuracy table ---- */
+  table{width:100%; border-collapse:collapse; font-size:14px;}
+  th, td{text-align:left; padding:10px 8px; border-bottom:1px solid var(--line);}
+  th{font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:#6b6252; font-weight:600;}
+  td.num{font-family:var(--mono);}
+  .badge{
+    display:inline-block; font-family:var(--mono); font-size:12px;
+    background:var(--veg); color:#fff; padding:3px 10px; border-radius:999px;
+  }
+  .stat-cards{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:28px;}
+  .stat-card{
+    border:1px solid var(--line); border-radius:4px; padding:16px 20px;
+    background:#fff; min-width:150px;
+  }
+  .stat-card .num{font-family:var(--mono); font-size:28px; font-weight:700; color:var(--builtup);}
+  .stat-card .label{font-size:12px; color:#6b6252; margin-top:4px;}
+
+  /* ---- area bars ---- */
+  .area-row{margin-bottom:12px;}
+  .area-label{
+    display:flex; justify-content:space-between;
+    font-family:var(--mono); font-size:12.5px; margin-bottom:4px;
+  }
+  .bar-track{height:10px; background:#e9e7dd; border-radius:2px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:2px;}
+
+  /* ---- interpretation ---- */
+  .prose{font-size:15px; max-width:74ch; color:#33302a;}
+  .prose p{margin:0 0 16px;}
+
+  footer{
+    max-width:920px; margin:0 auto; padding:40px 24px 70px;
+    font-family:var(--mono); font-size:12px; color:#8a8371;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    border-top:1px solid var(--line);
+  }
+  footer a{color:#8a8371;}
+
+  @media (max-width:640px){
+    .kv-grid{grid-template-columns:1fr;}
+    iframe{height:500px;}
+    footer{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">BVIEER · M.Sc. Geoinformatics · Semester III <span class="coords">·</span> 17.38°N, 78.49°E</div>
+    <h1>Supervised LULC Classification of Hyderabad</h1>
+    <p class="subtitle">A Random Forest classification of Sentinel-2 Surface Reflectance imagery, built and evaluated in Google Earth Engine — mapping five land-cover classes across the Hyderabad metropolitan boundary with independent accuracy validation.</p>
+    <div class="meta-row">
+      <span><strong>Student:</strong> Joshby Joshy</span>
+      <span><strong>Course:</strong> Geospatial Big Data Analysis</span>
+      <span><strong>Exercise:</strong> 2</span>
+      <span><strong>Coordinator:</strong> Dr. Aravinth R</span>
+    </div>
+  </div>
+</div>
+
+<section id="app">
+  <h2>Live classification app</h2>
+  <div class="app-frame-wrap">
+    <div class="app-frame-bar">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <a href="https://degrasskob.projects.earthengine.app/view/lulc" target="_blank" rel="noopener">Open full screen ↗</a>
+    </div>
+    <iframe
+      src="https://degrasskob.projects.earthengine.app/view/lulc"
+      loading="lazy"
+      title="Hyderabad LULC Classification — Earth Engine App"
+      allowfullscreen>
+    </iframe>
+  </div>
+  <a class="fallback-link" href="https://degrasskob.projects.earthengine.app/view/lulc" target="_blank" rel="noopener">
+    → If the map above doesn't load, open the app directly
+  </a>
+
+  <div class="legend">
+    <div class="chip"><span class="swatch" style="background:var(--water)"></span>Water</div>
+    <div class="chip"><span class="swatch" style="background:var(--builtup)"></span>Built-up</div>
+    <div class="chip"><span class="swatch" style="background:var(--veg)"></span>Vegetation / Tree Cover</div>
+    <div class="chip"><span class="swatch" style="background:var(--crop)"></span>Cropland / Managed Vegetation</div>
+    <div class="chip"><span class="swatch" style="background:var(--bare)"></span>Bare / Open Land</div>
+  </div>
+</section>
+
+<section id="methods">
+  <h2>Methods</h2>
+  <dl class="kv-grid">
+    <dt>Imagery</dt>
+    <dd>Sentinel-2 MSI Level-2A Surface Reflectance, Harmonized <br><span style="font-family:var(--mono); font-size:12.5px; color:#6b6252;">COPERNICUS/S2_SR_HARMONIZED</span></dd>
+
+    <dt>Date range</dt>
+    <dd>1 Nov 2024 – 28 Feb 2025 &nbsp;·&nbsp; 31 scenes</dd>
+
+    <dt>Cloud handling</dt>
+    <dd>Scene filter &lt;20% CLOUDY_PIXEL_PERCENTAGE, plus pixel-level SCL cloud / cloud-shadow masking</dd>
+
+    <dt>Predictors</dt>
+    <dd>B2, B3, B4, B8, B11, B12 &nbsp;+&nbsp; NDVI, NDBI, MNDWI</dd>
+
+    <dt>Processing scale</dt>
+    <dd>10 m</dd>
+
+    <dt>Classifier</dt>
+    <dd>Random Forest &nbsp;·&nbsp; 100 trees &nbsp;·&nbsp; seed 42</dd>
+  </dl>
+</section>
+
+<section id="accuracy">
+  <h2>Accuracy assessment</h2>
+
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="num">0.82</div>
+      <div class="label">Overall accuracy</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">8,318</div>
+      <div class="label">Validation samples</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">5</div>
+      <div class="label">Land-cover classes</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Class</th><th>Producer's accuracy</th><th>User's accuracy</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="swatch" style="background:var(--water); border-radius:2px; width:9px; height:9px; display:inline-block; margin-right:8px;"></span>Water</td><td class="num">0.955</td><td class="num">0.959</td></tr>
+      <tr><td><span class="swatch" style="background:var(--builtup); border-radius:2px; width:9px; height:9px; display:inline-block; margin-right:8px;"></span>Built-up</td><td class="num">0.939</td><td class="num">0.985</td></tr>
+      <tr><td><span class="swatch" style="background:var(--veg); border-radius:2px; width:9px; height:9px; display:inline-block; margin-right:8px;"></span>Vegetation</td><td class="num">0.920</td><td class="num">0.633</td></tr>
+      <tr><td><span class="swatch" style="background:var(--crop); border-radius:2px; width:9px; height:9px; display:inline-block; margin-right:8px;"></span>Cropland</td><td class="num">0.573</td><td class="num">0.998</td></tr>
+      <tr><td><span class="swatch" style="background:var(--bare); border-radius:2px; width:9px; height:9px; display:inline-block; margin-right:8px;"></span>Bare land</td><td class="num">0.193</td><td class="num">0.304</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="area">
+  <h2>Class area statistics</h2>
+
+  <div class="area-row">
+    <div class="area-label"><span>Built-up</span><span>96.92 km² · 50.5%</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:50.5%; background:var(--builtup);"></div></div>
+  </div>
+  <div class="area-row">
+    <div class="area-label"><span>Vegetation</span><span>49.92 km² · 26.0%</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:26.0%; background:var(--veg);"></div></div>
+  </div>
+  <div class="area-row">
+    <div class="area-label"><span>Bare land</span><span>35.65 km² · 18.6%</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:18.6%; background:var(--bare);"></div></div>
+  </div>
+  <div class="area-row">
+    <div class="area-label"><span>Water</span><span>7.89 km² · 4.1%</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:4.1%; background:var(--water);"></div></div>
+  </div>
+  <div class="area-row">
+    <div class="area-label"><span>Cropland</span><span>1.04 km² · 0.5%</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:0.5%; background:var(--crop);"></div></div>
+  </div>
+</section>
+
+<section id="interpretation">
+  <h2>Interpretation &amp; limitations</h2>
+  <div class="prose">
+    <p>Built-up land is the dominant class in Hyderabad, occupying 96.92 sq km (50.5% of the mapped area), reflecting the city's dense urban core. Vegetation (26.0%) and bare land (18.6%) follow, with water (4.1%) and cropland (0.5%) comprising the smallest shares.</p>
+    <p>Built-up and bare land classes show the most spectral confusion, likely due to overlapping reflectance signatures of dry-season exposed soil, construction sites, and bright rooftops. Vegetation and cropland show moderate confusion during the dry season, when seasonal crops senesce and approach the spectral profile of natural vegetation.</p>
+    <p>Overall accuracy of 0.82 meets the assignment target of 0.80. Reliability could be further improved through a wetter-season composite for stronger vegetation/cropland separability, additional training samples targeting the confused class pairs, and testing an alternate classifier such as Gradient Tree Boost.</p>
+  </div>
+</section>
+
+<footer>
+  <span>Data: Copernicus Sentinel-2 (ESA) via Google Earth Engine</span>
+  <span><a href="https://degrasskob.projects.earthengine.app/view/lulc" target="_blank" rel="noopener">Earth Engine App</a> · <a href="#" id="script-link">Read-only script</a></span>
+</footer>
+
+</body>
+</html>
