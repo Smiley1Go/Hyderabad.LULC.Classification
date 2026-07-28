@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hyderabad — Land Use &amp; Land Cover Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F1F4F3;
+    --surface:#FFFFFF;
+    --ink:#14161A;
+    --muted:#5B6169;
+    --hair:#DFE3E0;
+    --violet:#5B3A9E;
+    --violet-deep:#3E2570;
+    --violet-pale:#EFE9FA;
+    --violet-line:#C9BAEB;
+
+    --water:#0066CC;
+    --builtup:#D73027;
+    --veg:#1A9850;
+    --crop:#A6D96A;
+    --bare:#D9A45B;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{color:var(--violet-deep);}
+
+  .wrap{
+    max-width:1360px;
+    margin:0 auto;
+    padding:28px 32px 64px;
+  }
+
+  /* ---------- HEADER ---------- */
+  header{
+    position:relative;
+    padding:26px 34px;
+    border-radius:22px;
+    background:var(--surface);
+    border:1px solid var(--hair);
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    gap:22px;
+  }
+  header::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      repeating-radial-gradient(circle at 88% 20%, transparent 0 26px, rgba(91,58,158,0.05) 27px 28px),
+      repeating-radial-gradient(circle at 88% 20%, transparent 0 52px, rgba(91,58,158,0.05) 53px 54px);
+    pointer-events:none;
+  }
+  .logo{
+    flex:0 0 auto;
+    width:58px; height:58px;
+    border-radius:16px;
+    background:linear-gradient(155deg, var(--violet) 0%, var(--violet-deep) 100%);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px rgba(62,37,112,0.28);
+    position:relative; z-index:1;
+  }
+  .logo svg{width:34px;height:34px;}
+  .headline{position:relative; z-index:1;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:0.14em;
+    color:var(--violet-deep);
+    text-transform:uppercase;
+    margin:0 0 6px;
+    font-weight:600;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:clamp(24px,3.4vw,38px);
+    line-height:1.08;
+    margin:0 0 8px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+  }
+  .sub{
+    margin:0;
+    max-width:640px;
+    font-size:14.5px;
+    line-height:1.5;
+    color:var(--muted);
+  }
+  .status-row{
+    margin-left:auto;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:10px;
+    position:relative; z-index:1;
+  }
+  .live-pill{
+    display:inline-flex; align-items:center; gap:7px;
+    background:var(--violet-pale);
+    color:var(--violet-deep);
+    border:1px solid var(--violet-line);
+    padding:6px 12px 6px 10px;
+    border-radius:999px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    white-space:nowrap;
+  }
+  .live-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:#2E9E5B;
+    box-shadow:0 0 0 3px rgba(46,158,91,0.18);
+  }
+  .open-tab{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--ink);
+    color:#fff;
+    text-decoration:none;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:999px;
+    white-space:nowrap;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .open-tab:hover{background:var(--violet-deep); transform:translateY(-1px);}
+
+  /* ---------- MAIN SPLIT ---------- */
+  .stage{
+    display:flex;
+    gap:20px;
+    margin-top:20px;
+    align-items:stretch;
+  }
+  .map-col{
+    flex:0 0 70%;
+    max-width:70%;
+    min-width:0;
+  }
+  .panel-col{
+    flex:0 0 30%;
+    max-width:30%;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .map-frame{
+    position:relative;
+    background:var(--surface);
+    border:1px solid var(--hair);
+    border-radius:22px;
+    padding:14px;
+    height:100%;
+  }
+  .map-frame .corner{
+    position:absolute;
+    width:16px; height:16px;
+    border-color:var(--violet);
+    border-style:solid;
+    opacity:.55;
+    z-index:2;
+  }
+  .corner.tl{top:10px; left:10px; border-width:2px 0 0 2px; border-radius:4px 0 0 0;}
+  .corner.tr{top:10px; right:10px; border-width:2px 2px 0 0; border-radius:0 4px 0 0;}
+  .corner.bl{bottom:10px; left:10px; border-width:0 0 2px 2px; border-radius:0 0 0 4px;}
+  .corner.br{bottom:10px; right:10px; border-width:0 2px 2px 0; border-radius:0 0 4px 0;}
+
+  .map-embed-wrap{
+    position:relative;
+    width:100%;
+    height:640px;
+    border-radius:14px;
+    overflow:hidden;
+    background:#E7EAE7;
+  }
+  .map-embed-wrap iframe{
+    width:100%; height:100%; border:0; display:block;
+  }
+  .map-caption{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 4px 2px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--muted);
+    letter-spacing:.02em;
+  }
+  .map-caption a{color:var(--violet-deep); text-decoration:none; font-weight:600;}
+  .map-caption a:hover{text-decoration:underline;}
+
+  /* ---------- TABS ---------- */
+  .tabbar{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .tab-btn{
+    flex:1;
+    appearance:none;
+    border:1.5px solid var(--violet-line);
+    background:var(--violet-pale);
+    color:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    padding:13px 10px;
+    cursor:pointer;
+    border-radius:20px 8px 20px 8px;
+    transition:all .18s ease;
+  }
+  .tab-btn:hover{border-color:var(--violet);}
+  .tab-btn.active{
+    background:var(--violet);
+    border-color:var(--violet);
+    color:#fff;
+    border-radius:8px 20px 8px 20px;
+    box-shadow:0 6px 14px rgba(91,58,158,0.28);
+  }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--hair);
+    border-radius:8px 22px 8px 22px;
+    padding:22px 22px 24px;
+    flex:1;
+    overflow-y:auto;
+    max-height:640px;
+  }
+  .panel-section{display:none;}
+  .panel-section.active{display:block;}
+
+  .tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--violet-deep);
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .panel h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:20px;
+    margin:0 0 12px;
+    line-height:1.25;
+  }
+  .panel p{
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--muted);
+    margin:0 0 14px;
+  }
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin:14px 0 18px;
+  }
+  .stat-card{
+    background:var(--bg);
+    border:1px solid var(--hair);
+    border-radius:14px 6px 14px 6px;
+    padding:11px 12px;
+  }
+  .stat-card .k{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+    display:block;
+    margin-bottom:4px;
+  }
+  .stat-card .v{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px;
+    font-weight:600;
+    color:var(--ink);
+  }
+
+  .checklist{list-style:none; margin:0 0 6px; padding:0;}
+  .checklist li{
+    display:flex; gap:8px; align-items:flex-start;
+    font-size:13px; line-height:1.55; color:var(--ink);
+    margin-bottom:10px;
+  }
+  .checklist li::before{
+    content:"";
+    flex:0 0 auto;
+    width:15px; height:15px; margin-top:2px;
+    border-radius:5px;
+    background:var(--violet-pale);
+    border:1.5px solid var(--violet);
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3 3 7-7' stroke='%235B3A9E' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat;
+    background-position:center;
+  }
+
+  /* ---------- DONUT ---------- */
+  .donut-row{
+    display:flex; align-items:center; gap:16px;
+    margin:6px 0 16px;
+  }
+  .donut{
+    flex:0 0 auto;
+    width:118px; height:118px;
+    border-radius:50%;
+    background:conic-gradient(
+      var(--builtup) 0% 50.5%,
+      var(--veg) 50.5% 76.5%,
+      var(--bare) 76.5% 95.1%,
+      var(--water) 95.1% 99.2%,
+      var(--crop) 99.2% 100%
+    );
+    position:relative;
+  }
+  .donut::after{
+    content:"";
+    position:absolute; inset:20px;
+    border-radius:50%;
+    background:var(--surface);
+  }
+  .donut-center{
+    position:absolute; inset:20px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center;
+  }
+  .donut-center .n{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    line-height:1;
+  }
+  .donut-center .u{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:8.5px;
+    color:var(--muted);
+    margin-top:3px;
+  }
+  .legend{flex:1; display:flex; flex-direction:column; gap:7px;}
+  .legend-row{
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:12px;
+  }
+  .legend-left{display:flex; align-items:center; gap:7px;}
+  .dot{width:9px; height:9px; border-radius:3px; flex:0 0 auto;}
+  .legend-pct{font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--ink);}
+
+  .bar-list{margin:0 0 18px;}
+  .bar-item{margin-bottom:11px;}
+  .bar-item .bl-top{
+    display:flex; justify-content:space-between;
+    font-size:12px; margin-bottom:4px;
+  }
+  .bl-top .name{font-weight:600; color:var(--ink);}
+  .bl-top .val{font-family:'IBM Plex Mono',monospace; color:var(--muted);}
+  .bar-track{
+    height:8px; border-radius:5px;
+    background:var(--bg);
+    border:1px solid var(--hair);
+    overflow:hidden;
+  }
+  .bar-fill{height:100%; border-radius:5px;}
+
+  .metric-row{
+    display:flex; gap:10px;
+    margin:4px 0 18px;
+  }
+  .metric{
+    flex:1;
+    background:var(--violet-pale);
+    border:1px solid var(--violet-line);
+    border-radius:14px 6px 14px 6px;
+    padding:12px;
+    text-align:center;
+  }
+  .metric .m-v{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:19px; font-weight:700;
+    color:var(--violet-deep);
+  }
+  .metric .m-k{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px; letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-top:3px;
+  }
+
+  table.acc-table{
+    width:100%; border-collapse:collapse;
+    font-size:11.5px;
+    margin:0 0 18px;
+  }
+  .acc-table th{
+    text-align:left;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--muted);
+    font-weight:600;
+    padding:0 6px 8px 0;
+    border-bottom:1px solid var(--hair);
+  }
+  .acc-table td{
+    padding:7px 6px 7px 0;
+    border-bottom:1px solid var(--hair);
+    color:var(--ink);
+  }
+  .acc-table tr:last-child td{border-bottom:none;}
+  .cls-dot{display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:6px;}
+
+  .note{
+    background:var(--bg);
+    border-left:3px solid var(--violet);
+    border-radius:4px 12px 12px 4px;
+    padding:12px 14px;
+    font-size:12px;
+    line-height:1.6;
+    color:var(--muted);
+  }
+  .note b{color:var(--ink);}
+
+  footer{
+    text-align:center;
+    margin-top:24px;
+    font-size:11.5px;
+    color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+  }
+
+  @media (max-width:920px){
+    .stage{flex-direction:column;}
+    .map-col,.panel-col{flex:1 1 auto; max-width:100%;}
+    .map-embed-wrap{height:420px;}
+    .panel{max-height:none;}
+    header{flex-wrap:wrap;}
+    .status-row{margin-left:0; align-items:flex-start; width:100%;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="46" width="5" height="12" rx="1" fill="#fff"/>
+        <rect x="17" y="40" width="5" height="18" rx="1" fill="#fff"/>
+        <rect x="42" y="40" width="5" height="18" rx="1" fill="#fff"/>
+        <rect x="53" y="46" width="5" height="12" rx="1" fill="#fff"/>
+        <circle cx="8.5" cy="43" r="2.6" fill="#fff"/>
+        <circle cx="19.5" cy="37" r="2.6" fill="#fff"/>
+        <circle cx="44.5" cy="37" r="2.6" fill="#fff"/>
+        <circle cx="55.5" cy="43" r="2.6" fill="#fff"/>
+        <path d="M24 58V34c0-4.4 3.6-8 8-8s8 3.6 8 8v24" stroke="#fff" stroke-width="4.2" stroke-linecap="round"/>
+        <circle cx="32" cy="21" r="3.4" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="headline">
+      <p class="eyebrow">Interactive Geospatial Application</p>
+      <h1>Hyderabad — Land Use &amp; Land Cover Watch</h1>
+      <p class="sub">A Sentinel-2 based classification of Hyderabad's built-up, vegetated, and open surfaces, rendered live from Google Earth Engine.</p>
+    </div>
+    <div class="status-row">
+      <span class="live-pill"><span class="live-dot"></span>Live Earth Engine app</span>
+      <a class="open-tab" href="https://degrasskob.projects.earthengine.app/view/lulc" target="_blank" rel="noopener">Open app in new tab ↗</a>
+    </div>
+  </header>
+
+  <div class="stage">
+
+    <!-- MAP: ~70% -->
+    <div class="map-col">
+      <div class="map-frame">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <div class="map-embed-wrap">
+          <iframe
+            src="https://degrasskob.projects.earthengine.app/view/lulc"
+            loading="lazy"
+            allow="geolocation"
+            title="Hyderabad LULC — Google Earth Engine App">
+          </iframe>
+        </div>
+        <div class="map-caption">
+          <span>Pan, zoom, and toggle layers directly inside the map.</span>
+          <a href="https://degrasskob.projects.earthengine.app/view/lulc" target="_blank" rel="noopener">Trouble loading? Open directly ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDE TABS: ~30% -->
+    <div class="panel-col">
+      <div class="tabbar">
+        <button class="tab-btn active" data-tab="details">Project Details</button>
+        <button class="tab-btn" data-tab="stats">Statistics</button>
+      </div>
+
+      <div class="panel">
+
+        <!-- TAB 1 -->
+        <section class="panel-section active" id="details">
+          <p class="tag">Project overview</p>
+          <h2>What this map shows</h2>
+          <p>A supervised Random Forest classification separating Hyderabad's surface into five land-cover classes — water, built-up, vegetation, cropland, and bare land — built from a cloud-filtered Sentinel-2 composite.</p>
+
+          <div class="stat-grid">
+            <div class="stat-card"><span class="k">Study area</span><span class="v">Hyderabad, Telangana</span></div>
+            <div class="stat-card"><span class="k">Mapped extent</span><span class="v">191.4 sq km</span></div>
+            <div class="stat-card"><span class="k">Imagery date range</span><span class="v">Nov 2024 – Feb 2025</span></div>
+            <div class="stat-card"><span class="k">Source</span><span class="v">Sentinel-2 SR, 10 m</span></div>
+            <div class="stat-card"><span class="k">Classifier</span><span class="v">Random Forest (100 trees)</span></div>
+            <div class="stat-card"><span class="k">Platform</span><span class="v">Google Earth Engine</span></div>
+          </div>
+
+          <p class="tag">What you can do</p>
+          <ul class="checklist">
+            <li>Pan and zoom the live map to inspect any neighbourhood in detail.</li>
+            <li>Toggle the classification, boundary, and imagery layers from the panel inside the map.</li>
+            <li>Switch to the Statistics tab for area totals, accuracy, and class-wise breakdowns.</li>
+            <li>Use this as a reference for planning, teaching, or field verification.</li>
+          </ul>
+
+          <p style="font-size:12px;color:var(--muted);line-height:1.6;">Composite built from a dry-season window (Nov–Feb) to minimise monsoon cloud cover, with per-scene SCL masking and a per-pixel median mosaic prior to classification.</p>
+        </section>
+
+        <!-- TAB 2 -->
+        <section class="panel-section" id="stats">
+          <p class="tag">Class distribution</p>
+          <h2>Land cover breakdown</h2>
+
+          <div class="donut-row">
+            <div class="donut">
+              <div class="donut-center">
+                <span class="n">191.4</span>
+                <span class="u">SQ KM</span>
+              </div>
+            </div>
+            <div class="legend">
+              <div class="legend-row"><span class="legend-left"><span class="dot" style="background:var(--builtup)"></span>Built-up</span><span class="legend-pct">50.5%</span></div>
+              <div class="legend-row"><span class="legend-left"><span class="dot" style="background:var(--veg)"></span>Vegetation</span><span class="legend-pct">26.0%</span></div>
+              <div class="legend-row"><span class="legend-left"><span class="dot" style="background:var(--bare)"></span>Bare land</span><span class="legend-pct">18.6%</span></div>
+              <div class="legend-row"><span class="legend-left"><span class="dot" style="background:var(--water)"></span>Water</span><span class="legend-pct">4.1%</span></div>
+              <div class="legend-row"><span class="legend-left"><span class="dot" style="background:var(--crop)"></span>Cropland</span><span class="legend-pct">0.5%</span></div>
+            </div>
+          </div>
+
+          <div class="bar-list">
+            <div class="bar-item">
+              <div class="bl-top"><span class="name">Built-up</span><span class="val">96.92 sq km</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:50.5%;background:var(--builtup)"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bl-top"><span class="name">Vegetation</span><span class="val">49.92 sq km</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:26.0%;background:var(--veg)"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bl-top"><span class="name">Bare land</span><span class="val">35.65 sq km</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:18.6%;background:var(--bare)"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bl-top"><span class="name">Water</span><span class="val">7.89 sq km</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:4.1%;background:var(--water)"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bl-top"><span class="name">Cropland</span><span class="val">1.04 sq km</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:0.5%;background:var(--crop)"></div></div>
+            </div>
+          </div>
+
+          <p class="tag">Accuracy assessment</p>
+          <div class="metric-row">
+            <div class="metric"><div class="m-v">8,318</div><div class="m-k">Validation points</div></div>
+            <div class="metric"><div class="m-v">82.0%</div><div class="m-k">Overall accuracy</div></div>
+            <div class="metric"><div class="m-v">0.699</div><div class="m-k">Kappa</div></div>
+          </div>
+
+          <table class="acc-table">
+            <tr><th>Class</th><th>Producer's</th><th>User's</th></tr>
+            <tr><td><span class="cls-dot" style="background:var(--water)"></span>Water</td><td>0.955</td><td>0.959</td></tr>
+            <tr><td><span class="cls-dot" style="background:var(--builtup)"></span>Built-up</td><td>0.939</td><td>0.985</td></tr>
+            <tr><td><span class="cls-dot" style="background:var(--veg)"></span>Vegetation</td><td>0.920</td><td>0.633</td></tr>
+            <tr><td><span class="cls-dot" style="background:var(--crop)"></span>Cropland</td><td>0.573</td><td>0.998</td></tr>
+            <tr><td><span class="cls-dot" style="background:var(--bare)"></span>Bare land</td><td>0.193</td><td>0.304</td></tr>
+          </table>
+
+          <p class="tag">Interpretation &amp; limitations</p>
+          <div class="note">
+            Built-up land dominates Hyderabad's footprint at just over half the mapped area, with vegetation and bare land trailing behind. <b>Built-up and bare land</b> are the most confused pair — dry-season exposed soil, construction sites, and bright rooftops share similar reflectance. <b>Vegetation and cropland</b> also blur together once seasonal crops senesce toward the end of the dry window. Overall accuracy (82%) clears the target threshold, but bare-land recall stays weak — a wetter-season composite, more training samples in the confused classes, or a boosted-tree classifier would likely tighten this further.
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Data: Copernicus Sentinel-2 (ESA) via Google Earth Engine · Classification: Random Forest, 100 trees, seed 42</footer>
+
+</div>
+
+<script>
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.panel-section').forEach(function(s){ s.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
